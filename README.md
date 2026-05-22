@@ -4,6 +4,20 @@ Predicts whether a Yelp review is positive (4-5 stars) or negative (1-2 stars) u
 
 ---
 
+## Results
+
+Best model: **Random Forest**
+
+| Split | Accuracy | Precision | Recall | F1 | ROC-AUC |
+|-------|----------|-----------|--------|----|---------|
+| Validation | 0.904 | 0.929 | 0.941 | 0.935 | 0.950 |
+| Test | 0.909 | 0.932 | 0.945 | 0.938 | 0.954 |
+| Production (2020-2022) | 0.910 | 0.929 | 0.945 | 0.937 | 0.958 |
+
+Model generalizes well — consistent performance across validation, test, and unseen 2020-2022 production data.
+
+---
+
 ## Project Structure
 
 ```
@@ -48,15 +62,15 @@ date         timestamp
 
 ```
 S3 Data Lake (public)
-    ├── data/2019/                    raw 2019 parquet
-    ├── data/2020_2022/               raw 2020-2022 parquet
+    ├── data/2019/                      raw 2019 parquet
+    ├── data/2020_2022/                 raw 2020-2022 parquet
     ├── features/yelp_features.parquet  engineered features
     ├── splits/train.parquet
     ├── splits/test.parquet
     ├── splits/validation.parquet
     ├── splits/production.parquet
-    ├── athena-results/{your_name}/   per-person Athena query results
-    └── feature-store/                SageMaker Feature Store offline store
+    ├── athena-results/{your_name}/     per-person Athena query results
+    └── feature-store/                  SageMaker Feature Store offline store
          ↑
     AWS Glue (yelp_reviews_db)
          ↑
@@ -91,9 +105,8 @@ S3 Data Lake (public)
 - Saved features to S3 and registered SageMaker Feature Store group
 
 ### 04 — Data Split
-- Train/test/validation from 2019 data (stratified)
+- Train/test/validation from 2019 data (stratified, `random_state=42`)
 - Production data from 2020-2022 — simulates real deployment on newer reviews
-- All splits saved to `s3://aai-540-group1-yelp-reviews/splits/`
 
 | Split | Source | Size |
 |-------|--------|------|
@@ -101,6 +114,12 @@ S3 Data Lake (public)
 | Test | 2019 | ~10% |
 | Validation | 2019 | ~10% |
 | Production | 2020-2022 | ~100k sampled |
+
+### 05 — Modeling
+- Trained Logistic Regression (baseline) and Random Forest
+- Both models used `class_weight='balanced'` to handle 73/27 class imbalance
+- Random Forest outperformed Logistic Regression on all metrics
+- Model performance held up on 2020-2022 production data — no degradation
 
 ---
 
@@ -126,14 +145,14 @@ No setup needed — `LabRole` already has all required permissions.
 
 1. Open SageMaker Studio in `us-east-2`
 2. Upload all notebooks to your JupyterLab space
-3. Run notebooks **in order**:
+3. Run notebooks in order:
 
 ```
-01_setup_athena.ipynb     ← run once, sets up Glue + Athena
-02_eda.ipynb              ← optional, exploration only
-03_feature_engineering.ipynb  ← run once, saves features to S3
-04_split.ipynb            ← run once, saves splits to S3
-05_modeling.ipynb         ← run anytime
+01_setup_athena.ipynb          run once, sets up Glue + Athena
+02_eda.ipynb                   optional, exploration only
+03_feature_engineering.ipynb   run once, saves features to S3
+04_split.ipynb                 run once, saves splits to S3
+05_modeling.ipynb              run anytime
 ```
 
 4. In `01_setup_athena.ipynb` change `YOUR_NAME` to your initials:
@@ -145,8 +164,8 @@ YOUR_NAME = 'studentA'  # change this
 
 AWS Academy sessions reset every ~4 hours. After a reset:
 - Re-run `01_setup_athena.ipynb` from Cell 2 onwards — all create calls skip if resources exist
-- Re-run `03_feature_engineering.ipynb` Cell 1 only (setup) to restore session
-- Then continue with whichever notebook you need
+- Re-run setup cell in whichever notebook you need to restore the session
+- Then continue normally
 
 ---
 
@@ -164,14 +183,14 @@ AWS Academy sessions reset every ~4 hours. After a reset:
 
 ---
 
-## Key Findings from EDA
+## Key Findings
 
 - 907k reviews in 2019, zero data quality issues
 - Star distribution heavily skewed toward 5 stars (51.1%)
-- Average review length: 523 characters / 97 words
 - 3-star reviews (8.2%) dropped as ambiguous for binary classification
 - After dropping 3-stars: 73.4% positive, 26.6% negative
-- Class imbalance handled via `class_weight='balanced'` in model
+- Random Forest (90.9% accuracy, 0.954 ROC-AUC) outperformed Logistic Regression
+- Model performance consistent across validation, test, and 2020-2022 production data — no drift detected
 
 ---
 
