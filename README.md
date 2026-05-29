@@ -2,19 +2,15 @@
 
 Predicts whether a Yelp review is positive (4-5 stars) or negative (1-2 stars) using engineered text features and a binary classifier.
 
+> **AI assistance:** This project used Claude (Anthropic) to help write code, debug AWS/SageMaker integration issues, and draft portions of this README. All design decisions, data analysis, and final code review were performed by Group 1 members.
+
 ---
 
 ## Results
 
-Best model: **Random Forest**
+Random Forest outperforms a simple VADER-threshold benchmark by ~4 percentage points F1 on held-out test data. Performance holds up on unseen 2020-2022 production data with no drift detected.
 
-| Split | Accuracy | Precision | Recall | F1 | ROC-AUC |
-|-------|----------|-----------|--------|----|---------|
-| Validation | 0.904 | 0.929 | 0.941 | 0.935 | 0.950 |
-| Test | 0.909 | 0.932 | 0.945 | 0.938 | 0.954 |
-| Production (2020-2022) | 0.910 | 0.929 | 0.945 | 0.937 | 0.958 |
-
-Model generalizes well — consistent performance across validation, test, and unseen 2020-2022 production data.
+Exact metrics vary slightly across scheduled pipeline runs due to 80% bootstrap subsampling; see `07_sagemaker_pipeline.ipynb` Section 15 for live execution history. The model is registered in the SageMaker Model Registry under model package group `yelp-sentiment-model-group`, with versioned lineage across runs.
 
 ---
 
@@ -22,12 +18,16 @@ Model generalizes well — consistent performance across validation, test, and u
 
 ```
 notebooks/
-├── 01_setup_athena.ipynb        # sets up Glue database and Athena tables
-├── 02_eda.ipynb                 # exploratory data analysis
-├── 03_feature_engineering.ipynb # feature engineering + Feature Store
-├── 04_split.ipynb               # train/test/validation/production split
-├── 05_modeling.ipynb            # model training and evaluation
-└── project_config.json          # auto-generated, shared config across notebooks
+├── 01_setup_athena.ipynb              # sets up Glue database and Athena tables
+├── 02_eda.ipynb                       # exploratory data analysis
+├── 03_feature_engineering.ipynb       # feature engineering + Feature Store
+├── 04_split.ipynb                     # train/test/validation/production split
+├── 05_modeling.ipynb                  # local model comparison (RF vs LogReg)
+├── 06_sagemaker_model_store.ipynb     # SageMaker training, batch transform,
+│                                      # Model Registry, Model Card
+├── 07_sagemaker_pipeline.ipynb        # CI/CD pipeline DAG + daily EventBridge
+│                                      # schedule with bootstrap subsampling
+└── project_config.json                # auto-generated, shared config across notebooks
 ```
 
 ---
@@ -116,10 +116,24 @@ S3 Data Lake (public)
 | Production | 2020-2022 | ~100k sampled |
 
 ### 05 — Modeling
-- Trained Logistic Regression (baseline) and Random Forest
+- Trained Logistic Regression (baseline) and Random Forest locally
 - Both models used `class_weight='balanced'` to handle 73/27 class imbalance
 - Random Forest outperformed Logistic Regression on all metrics
 - Model performance held up on 2020-2022 production data — no degradation
+
+### 06 — SageMaker Model Store
+- Trained the Random Forest as a managed SageMaker training job (`ml.m5.large`, SKLearn 1.2-1 container)
+- Compared SageMaker-trained model against a VADER-threshold benchmark on validation/test/production
+- Ran a batch transform on a production sample (`ml.m5.large` transform instance)
+- Created a Model Package Group and registered a versioned model package with full lineage metadata
+- Created a Model Card documenting purpose, training context, evaluation results, and ethical/risk considerations
+
+### 07 — SageMaker Pipeline (CI/CD DAG)
+- Built an end-to-end SageMaker Pipeline orchestrating Train → Evaluate → Condition → (Register | Fail)
+- Conditional registration gated on `F1 ≥ MinF1Threshold` parameter
+- Demonstrated both success (registers model) and failure (`FailStep` terminates pipeline) terminal states
+- Scheduled the pipeline via EventBridge Scheduler to run every 24 hours with `SampleSeed=-1` and `SampleFrac=0.8` — each daily run trains on a different 80% random subset, producing meaningfully varied metrics
+- Each scheduled execution adds a new version to the Model Package Group, giving the registry real version history over time
 
 ---
 
@@ -148,11 +162,15 @@ No setup needed — `LabRole` already has all required permissions.
 3. Run notebooks in order:
 
 ```
-01_setup_athena.ipynb          run once, sets up Glue + Athena
-02_eda.ipynb                   optional, exploration only
-03_feature_engineering.ipynb   run once, saves features to S3
-04_split.ipynb                 run once, saves splits to S3
-05_modeling.ipynb              run anytime
+01_setup_athena.ipynb            run once, sets up Glue + Athena
+02_eda.ipynb                     optional, exploration only
+03_feature_engineering.ipynb     run once, saves features to S3
+04_split.ipynb                   run once, saves splits to S3
+05_modeling.ipynb                run anytime (local model comparison)
+06_sagemaker_model_store.ipynb   trains in SageMaker, registers model + card
+07_sagemaker_pipeline.ipynb      builds CI/CD pipeline DAG; Section 14 creates
+                                 a daily EventBridge schedule (remember to
+                                 stop it via Section 16 when done)
 ```
 
 4. In `01_setup_athena.ipynb` change `YOUR_NAME` to your initials:
@@ -166,6 +184,10 @@ AWS Academy sessions reset every ~4 hours. After a reset:
 - Re-run `01_setup_athena.ipynb` from Cell 2 onwards — all create calls skip if resources exist
 - Re-run setup cell in whichever notebook you need to restore the session
 - Then continue normally
+
+### Stopping the Daily Pipeline Schedule
+
+Notebook 07 Section 14 creates an EventBridge schedule that fires the pipeline every 24 hours. To stop the recurring runs (e.g., when you're done collecting metric-variation data), run **notebook 07 Section 16** — it deletes the schedule. Existing execution history stays in SageMaker Pipelines; only the recurring trigger is removed.
 
 ---
 
@@ -202,3 +224,4 @@ All installed automatically in each notebook via `install_if_missing()`:
 - `nltk` — VADER sentiment analysis
 - `pyarrow` — parquet support
 - `scikit-learn` — model training and splitting
+- `sagemaker` (>=2,<3) — training jobs, batch transform, Model Registry, Pipelines (notebooks 06, 07)
