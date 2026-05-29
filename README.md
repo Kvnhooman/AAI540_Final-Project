@@ -142,7 +142,7 @@ S3 Data Lake (public)
 ### Prerequisites
 
 #### Regular AWS users (one-time setup)
-1. Create a SageMaker domain in `us-east-2` (Ohio)
+1. Create a SageMaker domain in `us-east-2` (Ohio) — this matches the shared bucket
 2. Go to IAM → Roles → your SageMaker execution role:
    - Permissions tab → attach `AWSGlueServiceRole`
    - Trust relationships tab → add `glue.amazonaws.com` to Service list:
@@ -153,7 +153,26 @@ S3 Data Lake (public)
      ```
 
 #### AWS Academy users
-No setup needed — `LabRole` already has all required permissions.
+`LabRole` already has the required IAM permissions, but Academy typically locks you into `us-east-1` while the shared dataset bucket lives in `us-east-2`. Glue and Athena are region-scoped, so cross-region access is not reliable — you need a copy of the dataset in your Academy region.
+
+1. Confirm your Academy region (top-right of the AWS console). If it's already `us-east-2`, you can use the shared bucket directly and skip step 2.
+2. If your region is different (most commonly `us-east-1`):
+   - Create your own S3 bucket in that region, e.g. `s3://yourname-yelp-data/`
+   - Copy the two Yelp parquet files into it under the same prefixes the notebooks expect:
+     ```
+     s3://yourname-yelp-data/data/2019/yelp_reviews_2019.parquet
+     s3://yourname-yelp-data/data/2020_2022/yelp_reviews_2020-2022.parquet
+     ```
+     Easiest way (run from any machine with AWS credentials for both accounts, or from a SageMaker terminal):
+     ```bash
+     aws s3 cp s3://aai-540-group1-yelp-reviews/data/2019/yelp_reviews_2019.parquet \
+               s3://yourname-yelp-data/data/2019/ \
+               --source-region us-east-2 --region us-east-1
+     aws s3 cp s3://aai-540-group1-yelp-reviews/data/2020_2022/yelp_reviews_2020-2022.parquet \
+               s3://yourname-yelp-data/data/2020_2022/ \
+               --source-region us-east-2 --region us-east-1
+     ```
+   - In `01_setup_athena.ipynb` Section 1, update `REGION` and `SOURCE_BUCKET` to your values. All downstream notebooks pick these up automatically via `project_config.json`.
 
 ### Steps
 
@@ -178,12 +197,14 @@ No setup needed — `LabRole` already has all required permissions.
 YOUR_NAME = 'studentA'  # change this
 ```
 
-### Re-running After Session Expires (Academy)
+### Coming Back After a Session Break
 
-AWS Academy sessions reset every ~4 hours. After a reset:
-- Re-run `01_setup_athena.ipynb` from Cell 2 onwards — all create calls skip if resources exist
-- Re-run setup cell in whichever notebook you need to restore the session
-- Then continue normally
+Academy lab sessions have time limits (typically a few hours), but the AWS resources you've created — S3 buckets, Glue databases, SageMaker model packages, pipelines — persist across sessions. What gets lost is your Studio kernel state (Python variables in memory).
+
+When you come back:
+- Reopen SageMaker Studio in the same region you set up in
+- Open the notebook you were working in and run the Setup cells to restore Python state
+- All the `create_*` calls in the notebooks are idempotent (use try/except on AlreadyExistsException), so re-running earlier cells won't error or duplicate resources
 
 ### Stopping the Daily Pipeline Schedule
 
