@@ -8,9 +8,9 @@ Predicts whether a Yelp review is positive (4-5 stars) or negative (1-2 stars) u
 
 ## Results
 
-Random Forest outperforms a simple VADER-threshold benchmark by ~4 percentage points F1 on held-out test data. Performance holds up on unseen 2020-2022 production data with no drift detected.
+Random Forest outperforms a simple VADER-threshold benchmark by ~4 percentage points F1 on held-out test data. Performance holds up on unseen 2020-2022 production data with no drift detected across any of the six engineered features, confirmed by Population Stability Index measurement against the training baseline.
 
-Exact metrics vary slightly across scheduled pipeline runs due to 80% bootstrap subsampling; see `07_sagemaker_pipeline.ipynb` Section 15 for live execution history. The model is registered in the SageMaker Model Registry under model package group `yelp-sentiment-model-group`, with versioned lineage across runs.
+Exact metrics vary slightly across scheduled pipeline runs due to 80% bootstrap subsampling; see `07_sagemaker_pipeline.ipynb` Section 15 for live execution history. The model is registered in the SageMaker Model Registry under model package group `yelp-sentiment-model-group`, with versioned lineage across runs. Prediction monitoring, drift metrics, and alarms are available in the CloudWatch dashboard `yelp-sentiment-monitoring`.
 
 ---
 
@@ -27,6 +27,8 @@ notebooks/
 │                                      # Model Registry, Model Card
 ├── 07_sagemaker_pipeline.ipynb        # CI/CD pipeline DAG + daily EventBridge
 │                                      # schedule with bootstrap subsampling
+├── 08_monitoring.ipynb                # CloudWatch prediction logging, PSI drift
+│                                      # check, dashboard, and alarms
 └── project_config.json                # auto-generated, shared config across notebooks
 ```
 
@@ -77,6 +79,11 @@ S3 Data Lake (public)
     Amazon Athena
          ↑
     SageMaker Notebooks
+         ↓ (notebook 08 scores production and publishes monitoring data)
+    Amazon CloudWatch
+        ├── Logs  /yelp-sentiment/predictions    structured prediction events
+        ├── Metrics  YelpSentiment/Monitoring     volume, positive rate, confidence, drift PSI
+        └── Dashboard + Alarms                   yelp-sentiment-monitoring
 ```
 
 ---
@@ -135,6 +142,16 @@ S3 Data Lake (public)
 - Scheduled the pipeline via EventBridge Scheduler to run every 24 hours with `SampleSeed=-1` and `SampleFrac=0.8` — each daily run trains on a different 80% random subset, producing meaningfully varied metrics
 - Each scheduled execution adds a new version to the Model Package Group, giving the registry real version history over time
 
+### 08 — Monitoring
+- Rebuilt the production model and scored the full 2020-2022 production set (93k rows)
+- Logged 1,000 sampled predictions to CloudWatch Logs (`/yelp-sentiment/predictions`) as structured JSON events, each carrying the review id, predicted label, model score, confidence, and true label
+- Published summary metrics to custom namespace `YelpSentiment/Monitoring`: prediction volume, positive prediction rate, mean confidence
+- Ran a Population Stability Index (PSI) drift check comparing the distribution of each feature in production against the training baseline — confirmed no significant drift on any feature
+- Published `MaxFeaturePSI` as a CloudWatch metric so drift is a monitorable, alertable number rather than a static claim
+- Created the CloudWatch dashboard `yelp-sentiment-monitoring` with metric time-series charts and a live Logs Insights prediction table
+- Created two CloudWatch alarms: `yelp-sentiment-low-confidence` (MeanConfidence below 0.65) and `yelp-sentiment-feature-drift` (MaxFeaturePSI above 0.25)
+- Saved all monitoring resource names back to `project_config.json`
+
 ---
 
 ## How to Reproduce
@@ -190,11 +207,15 @@ S3 Data Lake (public)
 07_sagemaker_pipeline.ipynb      builds CI/CD pipeline DAG; Section 14 creates
                                  a daily EventBridge schedule (remember to
                                  stop it via Section 16 when done)
+08_monitoring.ipynb              run after all other notebooks; scores the
+                                 production split, logs predictions to CloudWatch,
+                                 checks feature drift (PSI), and creates a
+                                 dashboard and alarms
 ```
 
 4. In `01_setup_athena.ipynb` change `YOUR_NAME` to your initials:
 ```python
-YOUR_NAME = 'studentA'  # change this
+YOUR_NAME = 'Your_name/StudentID Here'  # change this
 ```
 
 ### Coming Back After a Session Break
