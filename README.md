@@ -123,17 +123,29 @@ S3 Data Lake (public)
 | Production | 2020-2022 | ~100k sampled |
 
 ### 05 — Modeling
-- Trained Logistic Regression (baseline) and Random Forest locally
-- Both models used `class_weight='balanced'` to handle 73/27 class imbalance
-- Random Forest outperformed Logistic Regression on all metrics
-- Model performance held up on 2020-2022 production data — no degradation
+
+Trained Logistic Regression as a local baseline model and Random Forest as the improved model.
+Both models used `class_weight='balanced'` to handle the 73/27 class imbalance.
+Random Forest performed best, achieving:
+
+- Test F1: 0.9365
+- Test ROC-AUC: 0.9517
+- Production F1: 0.9372
+- Production ROC-AUC: 0.9555
+
+Model performance remained consistent on 2020–2022 production data.
 
 ### 06 — SageMaker Model Store
-- Trained the Random Forest as a managed SageMaker training job (`ml.m5.large`, SKLearn 1.2-1 container)
-- Compared SageMaker-trained model against a VADER-threshold benchmark on validation/test/production
-- Ran a batch transform on a production sample (`ml.m5.large` transform instance)
-- Created a Model Package Group and registered a versioned model package with full lineage metadata
-- Created a Model Card documenting purpose, training context, evaluation results, and ethical/risk considerations
+
+Trained the Random Forest as a managed SageMaker SKLearn training job using `ml.m5.large`.
+Compared the SageMaker-trained model against a simple VADER-threshold benchmark:
+
+- Benchmark test F1: 0.9188
+- SageMaker Random Forest test F1: 0.9365
+- Benchmark test ROC-AUC: 0.8997
+- SageMaker Random Forest test ROC-AUC: 0.9517
+
+Deployed the model using SageMaker Batch Transform on a production sample, registered the model in SageMaker Model Registry, and created a SageMaker Model Card.
 
 ### 07 — SageMaker Pipeline (CI/CD DAG)
 - Built an end-to-end SageMaker Pipeline orchestrating Train → Evaluate → Condition → (Register | Fail)
