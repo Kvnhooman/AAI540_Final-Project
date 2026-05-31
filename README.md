@@ -115,12 +115,14 @@ S3 Data Lake (public)
 - Train/test/validation from 2019 data (stratified, `random_state=42`)
 - Production data from 2020-2022 — simulates real deployment on newer reviews
 
-| Split | Source | Size |
-|-------|--------|------|
-| Train | 2019 | ~40% |
-| Test | 2019 | ~10% |
-| Validation | 2019 | ~10% |
-| Production | 2020-2022 | ~100k sampled |
+| Split | Source | Rows | % of cleaned 2019 |
+|-------|--------|------|-------------------|
+| Train | 2019 | ~61k | ~67% |
+| Validation | 2019 | ~15k | ~16.65% |
+| Test | 2019 | ~15k | ~16.65% |
+| Production | 2020-2022 | ~93k | — |
+
+Two-stage split via `train_test_split`: first 2019 data into train/temp (66.7/33.3), then temp into validation/test (50/50). Production set is sampled from 2020-2022 data and held entirely out of training.
 
 ### 05 — Modeling
 
