@@ -90,6 +90,24 @@ S3 Data Lake (public)
 
 ## What We Built
 
+### 00 — Data Upload to S3
+
+Downloaded the public Yelp reviews dataset
+
+Converted raw JSON review data to Parquet format for efficient analytics
+
+Partitioned data into:
+
+* 2019 reviews
+* 2020–2022 reviews
+
+Uploaded Parquet files to Amazon S3 data lake
+
+Verified uploaded files and S3 object structure
+
+Established the project data source used by Athena, Feature Store, modeling, deployment, and monitoring notebooks
+
+
 ### 01 — Athena Setup
 - Created Glue database `yelp_reviews_db`
 - Manually defined Glue tables pointing to S3 parquet folders
