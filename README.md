@@ -124,18 +124,38 @@ S3 Data Lake (public)
 
 Two-stage split via `train_test_split`: first 2019 data into train/temp (66.7/33.3), then temp into validation/test (50/50). Production set is sampled from 2020-2022 data and held entirely out of training.
 
-### 05 — Modeling
+### 05 - Modeling and Evaluation
 
-Trained Logistic Regression as a local baseline model and Random Forest as the improved model.
-Both models used `class_weight='balanced'` to handle the 73/27 class imbalance.
-Random Forest performed best, achieving:
+This notebook develops and evaluates machine learning models for Yelp review sentiment classification using the engineered features created in Notebook 03 and the train, validation, test, and production datasets created in Notebook 04.
 
-- Test F1: 0.9365
-- Test ROC-AUC: 0.9517
-- Production F1: 0.9372
-- Production ROC-AUC: 0.9555
+Key activities include:
 
-Model performance remained consistent on 2020–2022 production data.
+* Loading the train, validation, test, and production datasets from Amazon S3.
+* Building a baseline **Logistic Regression** model using class balancing to address label imbalance.
+* Building a **Random Forest Classifier** as the primary candidate model.
+* Evaluating model performance using:
+
+  * Accuracy
+  * Precision
+  * Recall
+  * F1 Score
+  * ROC-AUC
+* Comparing model performance across validation, test, and production datasets.
+* Generating feature importance analysis for the Random Forest model.
+* Creating evaluation visualizations to support model comparison and selection.
+* Selecting the best-performing model for deployment in subsequent notebooks.
+
+Results showed that the Random Forest model consistently outperformed the Logistic Regression baseline across all evaluation metrics and was selected as the production model for the remainder of the project.
+
+Generated artifacts include:
+
+* `model_artifacts.joblib`
+* `model_artifacts.zip`
+* `modeling_evaluation.png`
+* `modeling_feature_importance.png`
+
+This notebook establishes the project's initial production-ready sentiment classification model and provides the performance baseline used in later SageMaker deployment, monitoring, and CI/CD workflows.
+
 
 ### 06 — SageMaker Model Store
 
