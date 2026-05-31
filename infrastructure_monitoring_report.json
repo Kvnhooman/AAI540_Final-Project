@@ -1,0 +1,55 @@
+{
+  "report_name": "Infrastructure Monitoring Report",
+  "created_at_utc": "2026-05-31-21-08-34",
+  "project": "Yelp Review Sentiment Classification",
+  "infrastructure_components": {
+    "sagemaker_training": {
+      "component": "SageMaker SKLearn Training Job",
+      "monitoring_focus": [
+        "Training job completion status",
+        "Training job failure detection",
+        "Model artifact output location"
+      ]
+    },
+    "sagemaker_batch_transform": {
+      "component": "SageMaker Batch Transform",
+      "monitoring_focus": [
+        "Batch transform job completion status",
+        "Batch transform output location",
+        "Batch inference execution health"
+      ]
+    },
+    "cloudwatch_logs": {
+      "component": "CloudWatch Logs",
+      "log_group": "/yelp-sentiment/predictions",
+      "monitoring_focus": [
+        "Prediction event logging",
+        "Prediction-level traceability",
+        "Recent prediction inspection"
+      ]
+    },
+    "cloudwatch_metrics": {
+      "component": "CloudWatch Custom Metrics",
+      "namespace": "YelpSentiment/Monitoring",
+      "metrics": [
+        "PredictionVolume",
+        "PositivePredictionRate",
+        "MeanConfidence",
+        "MaxFeaturePSI"
+      ]
+    },
+    "cloudwatch_dashboard": {
+      "dashboard_name": "yelp-sentiment-monitoring",
+      "description": "Dashboard used to monitor prediction behavior, model confidence, and feature drift."
+    },
+    "cloudwatch_alarms": {
+      "alarms": [
+        "yelp-sentiment-low-confidence",
+        "yelp-sentiment-feature-drift"
+      ],
+      "description": "Alarms monitor low model confidence and significant feature drift."
+    }
+  },
+  "endpoint_monitoring_note": "This project deploys the model using SageMaker Batch Transform rather than a persistent real-time endpoint. Therefore, infrastructure monitoring focuses on batch job status, CloudWatch logs, CloudWatch metrics, dashboards, and alarms instead of endpoint latency or invocation errors.",
+  "summary": "Infrastructure monitoring is implemented through SageMaker job tracking and CloudWatch observability resources. This provides visibility into the health of training, batch inference, prediction logging, custom metrics, dashboards, and alarms."
+}

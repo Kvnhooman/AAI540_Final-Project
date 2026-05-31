@@ -1,0 +1,25 @@
+{
+  "report_name": "Model Monitoring Report",
+  "created_at_utc": "2026-05-31-21-08-34",
+  "project": "Yelp Review Sentiment Classification",
+  "model_monitoring": {
+    "prediction_volume": {
+      "metric_name": "PredictionVolume",
+      "description": "Number of predictions processed."
+    },
+    "positive_prediction_rate": {
+      "metric_name": "PositivePredictionRate",
+      "description": "Percentage of positive predictions."
+    },
+    "mean_confidence": {
+      "metric_name": "MeanConfidence",
+      "description": "Average prediction confidence."
+    },
+    "prediction_logs": {
+      "cloudwatch_log_group": "/yelp-sentiment/predictions"
+    }
+  },
+  "cloudwatch_namespace": "YelpSentiment/Monitoring",
+  "dashboard": "yelp-sentiment-monitoring",
+  "summary": "Model monitoring is implemented through CloudWatch metrics and CloudWatch Logs. These metrics provide visibility into prediction behavior, confidence levels, and operational health."
+}

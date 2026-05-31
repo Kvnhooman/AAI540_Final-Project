@@ -1,0 +1,23 @@
+{
+  "report_name": "Data Monitoring Report",
+  "created_at_utc": "2026-05-31-21-08-34",
+  "project": "Yelp Review Sentiment Classification",
+  "baseline_dataset": "Training Split",
+  "comparison_dataset": "Production Split",
+  "monitoring_method": "Population Stability Index (PSI)",
+  "features_monitored": [
+    "review_length",
+    "word_count",
+    "useful",
+    "funny",
+    "cool",
+    "vader_score"
+  ],
+  "drift_thresholds": {
+    "psi_less_than_0_10": "No significant shift",
+    "psi_0_10_to_0_25": "Moderate shift",
+    "psi_greater_than_0_25": "Significant shift"
+  },
+  "cloudwatch_metric": "MaxFeaturePSI",
+  "summary": "Data monitoring is implemented using Population Stability Index (PSI) calculations. Feature distributions in production are compared against the training baseline. The maximum PSI value is published to CloudWatch and monitored through alarms."
+}
