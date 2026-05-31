@@ -197,35 +197,27 @@ Deployed the model using SageMaker Batch Transform on a production sample, regis
 - Created two CloudWatch alarms: `yelp-sentiment-low-confidence` (MeanConfidence below 0.65) and `yelp-sentiment-feature-drift` (MaxFeaturePSI above 0.25)
 - Saved all monitoring resource names back to `project_config.json`
 
-### 09 - Monitoring Reports and Documentation
+### 09 — Monitoring Reports
 
-This notebook extends the monitoring framework implemented in Notebook 08 by creating formal monitoring report artifacts and storing them in Amazon S3.
+Generated formal monitoring reports documenting the monitoring framework implemented in Notebook 08
 
-The notebook consolidates the monitoring resources created earlier—including CloudWatch Logs, custom CloudWatch metrics, dashboards, alarms, and PSI-based drift detection—into structured reports that document the operational health of the ML system.
+Created:
 
-Key activities include:
+* Model Monitoring Report
+* Data Monitoring Report
+* Infrastructure Monitoring Report
 
-* Generating a **Model Monitoring Report** that documents prediction volume monitoring, prediction confidence tracking, prediction logging, and model performance observability.
-* Generating a **Data Monitoring Report** that documents Population Stability Index (PSI) drift detection, feature distribution monitoring, and production-versus-training data comparisons.
-* Generating an **Infrastructure Monitoring Report** that documents SageMaker training jobs, SageMaker Batch Transform jobs, CloudWatch metrics, CloudWatch dashboards, CloudWatch alarms, and system observability resources.
-* Uploading all monitoring reports to Amazon S3 for long-term storage and project documentation.
-* Providing a consolidated monitoring summary for project reporting and assessment purposes.
+Documented:
 
-Generated report artifacts:
+* CloudWatch Logs
+* CloudWatch Metrics
+* CloudWatch Dashboard
+* CloudWatch Alarms
+* PSI-based feature drift monitoring
 
-* `model_monitoring_report.json`
-* `data_monitoring_report.json`
-* `infrastructure_monitoring_report.json`
+Uploaded monitoring report artifacts to Amazon S3 for long-term storage and project documentation
 
-Reports are stored in:
-
-`s3://sagemaker-us-east-1-555419874521/monitoring-reports/`
-
-This notebook completes the monitoring and reporting layer of the Yelp Sentiment MLOps workflow by providing formal monitoring documentation alongside the operational monitoring infrastructure created in Notebook 08.
-
-
-
-  
+Provided consolidated monitoring summary and reporting layer for the Yelp Sentiment MLOps workflow
 
 ---
 
