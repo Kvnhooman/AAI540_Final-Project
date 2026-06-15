@@ -65,30 +65,38 @@ date         timestamp
 
 ## Architecture
 
+![Yelp sentiment MLOps architecture](yelp_ml_pipeline_diagram.png)
+
+Raw Yelp data lands in S3 and is queried through AWS Glue and Athena, engineered into
+features (including the VADER sentiment score), and stored in SageMaker Feature Store
+(`yelp-review-features`). A managed SageMaker training job produces the Random Forest,
+which fans out three ways: registered in the **Model Registry** (`yelp-sentiment-model-group`),
+deployed via **Batch Transform** for batch inference, and wrapped in a **SageMaker Pipeline**
+(CI/CD DAG) that retrains daily through an **EventBridge** schedule. Everything downstream is
+observed by **CloudWatch** (dashboard, drift metrics, alarms) plus a **SageMaker Processing Job**
+that monitors model bias.
+
+### S3 layout (`s3://aai540-group1-yelp-data/`, us-east-1)
+
 ```
-S3 Data Lake  (s3://aai540-group1-yelp-data/, us-east-1)
-    ├── data/2019/                      raw 2019 parquet
-    ├── data/2020_2022/                 raw 2020-2022 parquet
-    ├── features/yelp_features.parquet  engineered features
-    ├── splits/{train,validation,test,production}.parquet
-    ├── athena-results/{your_name}/     per-person Athena query results
-    ├── feature-store/                  SageMaker Feature Store offline store
-    ├── sentiment-model-store/          training inputs, model artifacts, batch output
-    ├── bias-monitor/                   bias Processing Job inputs + reports
-    └── monitoring-reports/             model/data/infra/bias report artifacts
-         ↑
-    AWS Glue (yelp_reviews_db)  ←→  Amazon Athena
-         ↑
-    SageMaker Notebooks
-         ├── Training Job (RandomForest) ──► Model Registry (yelp-sentiment-model-group)
-         ├── Batch Transform ─────────────► scored predictions in S3
-         ├── SageMaker Pipeline (CI/CD DAG) ─► EventBridge daily schedule
-         └── Processing Job (bias monitor) ─► bias summary.json in S3
-         ↓ (notebook 08 scores production and publishes monitoring data)
-    Amazon CloudWatch
-        ├── Logs  /yelp-sentiment/predictions    structured prediction events
-        ├── Metrics  YelpSentiment/Monitoring     volume, positive rate, confidence, drift PSI
-        └── Dashboard + Alarms                   yelp-sentiment-monitoring
+├── data/2019/                      raw 2019 parquet
+├── data/2020_2022/                 raw 2020-2022 parquet
+├── features/yelp_features.parquet  engineered features
+├── splits/{train,validation,test,production}.parquet
+├── athena-results/{your_name}/     per-person Athena query results
+├── feature-store/                  SageMaker Feature Store offline store
+├── sentiment-model-store/          training inputs, model artifacts, batch output
+├── bias-monitor/                   bias Processing Job inputs + reports
+└── monitoring-reports/             model/data/infra/bias report artifacts
+```
+
+### CloudWatch resources
+
+```
+Logs       /yelp-sentiment/predictions    structured prediction events
+Metrics    YelpSentiment/Monitoring        volume, positive rate, confidence, drift PSI
+Dashboard  yelp-sentiment-monitoring       time-series charts + Logs Insights table
+Alarms     yelp-sentiment-low-confidence, yelp-sentiment-feature-drift
 ```
 
 ---
