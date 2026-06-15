@@ -6,6 +6,9 @@ Predicts whether a Yelp review is positive (4-5 stars) or negative (1-2 stars) u
 
 ---
 
+<img width="2940" height="1666" alt="image" src="https://github.com/user-attachments/assets/36ddcab7-d264-4611-9321-108382acedf4" />
+
+
 ## Results
 
 Random Forest outperforms a simple VADER-threshold benchmark by ~2 percentage points F1 on held-out test data (test F1 0.936 vs 0.919). Performance holds up on unseen 2020-2022 production data with no drift detected across any of the six engineered features, confirmed by Population Stability Index (PSI) measurement against the training baseline (max feature PSI ≈ 0.003, well below the 0.10 "no shift" threshold).
