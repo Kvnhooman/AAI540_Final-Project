@@ -1,0 +1,28 @@
+{
+  "REGION": "us-east-1",
+  "SOURCE_BUCKET": "aai540-group1-yelp-data",
+  "GLUE_DB": "yelp_reviews_db",
+  "ATHENA_RESULTS": "s3://aai540-group1-yelp-data/athena-results/qmou/",
+  "TABLES": [
+    "yelp_reviews_2019",
+    "yelp_reviews_2020_2022"
+  ],
+  "FEATURE_GROUP_NAME": "yelp-review-features",
+  "FEATURES_S3_PATH": "s3://aai540-group1-yelp-data/features/yelp_features.parquet",
+  "FEATURE_COLS": [
+    "review_length",
+    "word_count",
+    "useful",
+    "funny",
+    "cool",
+    "vader_score"
+  ],
+  "TARGET_COL": "sentiment",
+  "SPLIT_PATHS": {
+    "train": "s3://aai540-group1-yelp-data/splits/train.parquet",
+    "test": "s3://aai540-group1-yelp-data/splits/test.parquet",
+    "validation": "s3://aai540-group1-yelp-data/splits/validation.parquet",
+    "production": "s3://aai540-group1-yelp-data/splits/production.parquet"
+  },
+  "RANDOM_STATE": 42
+}
